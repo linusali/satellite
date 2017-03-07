@@ -1,0 +1,45 @@
+---
+- name: Copy manifest downloaded from Red Hat customer portal.
+  copy:
+    src: manifest.zip
+    dest: /root/manifest.zip
+  register: manifest_upload
+
+- name: Install Manifest downloaded from Red Hat customer portal.
+  shell: |
+    hammer -u {{satellite_admin}} -p '{{satllite_password}}' subscription upload \
+      --file /root/manifest.zip --organization-label '{{satellite_orgname}}'
+  register: manifest_result
+  changed_when: "'Import is the same as existing data' not in manifest_result.stderr"
+  when: manifest_upload.changed == True
+
+- name: Pausing few seconds for Satellite to digest manifest.
+  pause:
+    seconds: 15
+  when: manifest_result.changed == True
+
+- name: Enable required repos in satellite env.
+  shell: |
+    {%- if item.1.releasever is defined %}
+      {%- for version in item.1.releasever %}
+        hammer -u {{satellite_admin}} -p '{{satllite_password}}' repository-set enable \
+         --name '{{ item.1.name }}' \
+         --product '{{ item.0.name }}' \
+         --basearch '{{item.0.basearch}}' \
+         --releasever '{{ version }}'  \
+         --organization-label '{{satellite_orgname}}' ;
+       {%- endfor %}
+    {% else %}
+      hammer -u {{satellite_admin}} -p '{{satllite_password}}' repository-set enable \
+       --name '{{ item.1.name }}' \
+       --product '{{ item.0.name }}' \
+       --basearch '{{item.0.basearch}}' \
+       --organization-label '{{satellite_orgname}}' ;
+     {%- endif %}
+  with_subelements:
+    - "{{satllite_sync_repo.products}}"
+    - repos
+  register: sat_repo_result
+  changed_when: sat_repo_result.stdout.find('Repository enabled') != -1
+  failed_when: "'409 Conflict' not in sat_repo_result.stderr and sat_repo_result.stdout == ''"
+  ignore_errors: true

@@ -1,0 +1,46 @@
+---
+satellite_orgname: 'Default Organization'
+satellite_locname: 'Default Location'
+satellite_version: 'sat62'
+satellite_admin: 'admin'
+satellite_dns_interface: 'eth0'
+satellite_dns_reverse: '122.168.192.in-addr.arpa'
+satellite_dns_forwarders: '8.8.8.8'
+satellite_dns_domainname: "{{domain_name | default('example.com')}}"
+satllite_password: "{{ lookup('password', 'credentials/{{inventory_hostname}}_password length=15') }}"
+
+rhn_username: username
+rhn_password: password
+
+satellite_repos:
+  sat62:
+    - rhel-7-server-rpms
+    - rhel-server-rhscl-7-rpms
+    - rhel-7-server-satellite-6.2-rpms
+
+# In following section, Product name and repo names must be as per RHN
+#
+# Some useful commands, based on which some tasks are automated.
+# hammer -u [user] -p [password] product list --organization-label "[Org Name]"
+#
+# hammer -u [user] -p [password] repository-set (available-repositories|enable|disable) \
+#   --name "[Name of repo]" --product "[Name of product]" --organization-label "[Org Name]" --releasever [release] --basearch [arch]
+satllite_sync_repo:
+  products:
+    -
+      name: "Red Hat Enterprise Linux Server"
+      basearch: 'x86_64'
+      repos:
+        -
+          name: 'Red Hat Enterprise Linux 7 Server (RPMs)'
+          releasever:
+            - '7.3'
+    -
+      name: "Red Hat OpenStack"
+      basearch: 'x86_64'
+      repos:
+        -
+          name: 'Red Hat OpenStack Platform 10 for RHEL 7 (RPMs)'
+          releasever:
+            - '7.3'
+            - '7Server'

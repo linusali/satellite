@@ -1,0 +1,25 @@
+---
+- name: "Update /etc/host with {{ansible_nodename}}"
+  lineinfile: dest=/etc/hosts line="{{ansible_default_ipv4.address}} {{ansible_nodename}} {{ansible_hostname}}"
+- name: Subscribe system to RHN
+  redhat_subscription:
+    state: present
+    username: "{{rhn_username}}"
+    password: "{{rhn_password}}"
+    pool: '^Red Hat Satellite*'
+    # force_register: yes
+
+- include: update-repos.yaml
+- include: install-packages.yaml
+- include: configure.yaml
+- include: enable-repos.yaml
+- include: start-sync.yaml
+
+- name: Satellite access information.
+  vars:
+    message: |
+      Satellite is reachable at https://{{ inventory_hostname }}.{{ domain_name }}/
+      Username: {{satellite_admin}}
+      Password: {{satllite_password}}
+  debug:
+    msg: "{{ message.split('\n') }}"

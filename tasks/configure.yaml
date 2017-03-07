@@ -1,0 +1,17 @@
+---
+- name: Configure Satellite
+  shell: |
+    satellite-installer --scenario satellite \
+      --foreman-initial-organization "{{satellite_orgname}}" \
+      --foreman-initial-location "{{satellite_locname}}" \
+      --foreman-admin-username "{{satellite_admin}}" \
+      --foreman-admin-password "{{ satllite_password }}" \
+      --foreman-proxy-dns true \
+      --foreman-proxy-dhcp false \
+      --foreman-proxy-tftp false \
+      --foreman-proxy-dns-interface "{{satellite_dns_interface}}" \
+      --foreman-proxy-dns-zone "{{satellite_dns_domainname}}" \
+      --foreman-proxy-dns-forwarders "{{satellite_dns_forwarders}}" \
+      --foreman-proxy-dns-reverse "{{satellite_dns_reverse}}"
+  register: satellite_result
+  changed_when: satellite_result.stdout | search('Initial credentials are')

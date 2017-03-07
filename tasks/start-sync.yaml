@@ -1,0 +1,24 @@
+---
+- name: Start repo sync
+  shell: |
+    {%- if item.1.releasever is defined %}
+      {%- for version in item.1.releasever %}
+        hammer -u {{satellite_admin}} -p '{{satllite_password}}' repository synchronize \
+         --name '{{ item.1.name.replace("(","").replace(")","") }} {{item.0.basearch}} {{ version }}' \
+         --product '{{ item.0.name }}' \
+         --organization-label '{{satellite_orgname}}' \
+         --async ;
+       {%- endfor %}
+    {% else %}
+      hammer -u {{satellite_admin}} -p '{{satllite_password}}' repository synchronize \
+       --name '{{ item.1.name.replace("(","").replace(")","") }} {{item.0.basearch}}' \
+       --product '{{ item.0.name }}' \
+       --organization-label '{{satellite_orgname}}' \
+       --async ;
+     {%- endif %}
+  with_subelements:
+    - "{{satllite_sync_repo.products}}"
+    - repos
+  register: sat_sync_result
+  failed_when: false
+  ignore_errors: true

@@ -1,0 +1,22 @@
+## Thanks for the idea Rafal Szmigiel.
+- name: Disable all repos on host.
+  shell: subscription-manager repos --disable=*
+  args:
+    creates: /tmp/.repos-disabled-enabled
+  register: disable_repo_result
+
+- name: Enable required repos for installing satellite
+  shell: |
+    subscription-manager repos \
+      {% for item in satellite_repos[satellite_version] %}
+        --enable={{ item }}
+      {%- endfor %}
+  args:
+    creates: /tmp/.repos-disabled-enabled
+  register: enable_repo_result
+
+- name: Create a semaphore for repos disable/enable
+  file: dest=/tmp/.repos-disabled-enabled state=touch
+  when: disable_repo_result.rc == 0 and enable_repo_result.rc == 0
+  changed_when: false
+  failed_when: false
